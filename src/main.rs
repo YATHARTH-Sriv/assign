@@ -21,7 +21,10 @@ async fn main() {
         .route("/keypair", post(generate_keypair))
         .route("/token/create", post(create_token))
         .route("/token/mint", post(mint_token))
-        .route("/message/sign", post(sign_message));
+        .route("/message/sign", post(sign_message))
+        .route("/send/sol", post(send_sol))
+        .route("/message/verify", post(verify_message));
+
         // .route("/message/verify", post(verify_message));
 
     
@@ -270,4 +273,132 @@ async fn sign_message(Json(req): Json<SignMessageRequest>) -> impl IntoResponse 
     Json(ApiResponse::from(Ok(response)))
 }
 
+
+
+use solana_sdk::system_instruction::transfer;
+use solana_sdk::system_program;
+
+#[derive(Debug, Deserialize)]
+struct SendSolRequest {
+    from: String,
+    to: String,
+    lamports: u64,
+}
+
+#[derive(Serialize)]
+struct SendSolResponse {
+    program_id: String,
+    accounts: Vec<String>,
+    instruction_data: String,
+}
+
+async fn send_sol(Json(req): Json<SendSolRequest>) -> impl IntoResponse {
+    // Validate addresses
+    let from = match Pubkey::from_str(&req.from) {
+        Ok(p) => p,
+        Err(_) => return Json(ApiResponse::from(Err("Invalid sender pubkey".into()))),
+    };
+
+    let to = match Pubkey::from_str(&req.to) {
+        Ok(p) => p,
+        Err(_) => return Json(ApiResponse::from(Err("Invalid recipient pubkey".into()))),
+    };
+
+    // Create instruction
+    let instruction = transfer(&from, &to, req.lamports);
+
+    // Serialize accounts and instruction data
+    let accounts: Vec<String> = instruction
+        .accounts
+        .iter()
+        .map(|meta| meta.pubkey.to_string())
+        .collect();
+
+    let instruction_data = base64::encode(instruction.data.clone());
+
+    let response = SendSolResponse {
+        program_id: instruction.program_id.to_string(),
+        accounts,
+        instruction_data,
+    };
+
+    Json(ApiResponse::from(Ok(response)))
+}
+
+
+
+
+// Add this struct for the verify request
+#[derive(Debug, Deserialize)]
+struct VerifyMessageRequest {
+    message: String,
+    signature: String, // base64-encoded signature
+    pubkey: String,    // base58-encoded public key
+}
+
+// Add this struct for the verify response
+#[derive(Serialize)]
+struct VerifyMessageResponse {
+    valid: bool,
+    message: String,
+    pubkey: String,
+}
+
+// Add this function to handle message verification
+async fn verify_message(Json(req): Json<VerifyMessageRequest>) -> impl IntoResponse {
+    // Validate input fields
+    if req.message.trim().is_empty() || req.signature.trim().is_empty() || req.pubkey.trim().is_empty() {
+        return Json(ApiResponse::<VerifyMessageResponse>::Error {
+            success: false,
+            error: "Missing required fields".to_string(),
+        });
+    }
+
+    // Parse the public key
+    let pubkey = match Pubkey::from_str(&req.pubkey) {
+        Ok(pk) => pk,
+        Err(_) => {
+            return Json(ApiResponse::<VerifyMessageResponse>::Error {
+                success: false,
+                error: "Invalid public key".to_string(),
+            });
+        }
+    };
+
+    // Decode the base64-encoded signature
+    let signature_bytes = match base64::decode(&req.signature) {
+        Ok(bytes) if bytes.len() == 64 => bytes,
+        _ => {
+            return Json(ApiResponse::<VerifyMessageResponse>::Error {
+                success: false,
+                error: "Invalid signature format".to_string(),
+            });
+        }
+    };
+
+    // Create signature object
+    let signature = match Signature::try_from(signature_bytes.as_slice()) {
+        Ok(sig) => sig,
+        Err(_) => {
+            return Json(ApiResponse::<VerifyMessageResponse>::Error {
+                success: false,
+                error: "Failed to parse signature".to_string(),
+            });
+        }
+    };
+
+    // Verify the signature
+    let is_valid = signature.verify(&pubkey.to_bytes(), req.message.as_bytes());
+
+    let response = VerifyMessageResponse {
+        valid: is_valid,
+        message: req.message.clone(),
+        pubkey: req.pubkey.clone(),
+    };
+
+    Json(ApiResponse::from(Ok(response)))
+}
+
+// Don't forget to add the route in your main function:
+// .route("/message/verify", post(verify_message));
 
