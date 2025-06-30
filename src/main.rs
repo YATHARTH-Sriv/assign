@@ -425,23 +425,13 @@ struct SendTokenResponse {
     instruction_data: String,
 }
 
-// #[derive(Serialize)]
-// struct SendTokenAccount {
-//     pubkey: String,
-//     #[serde(rename = "isSigner")]
-//     is_signer: bool,
-//     // The spec shows inconsistent naming - keeping both for compatibility
-// }
-
 #[derive(Serialize)]
 struct SendTokenAccount {
     pubkey: String,
     #[serde(rename = "isSigner")]
     is_signer: bool,
-    #[serde(rename = "isWritable")]
-    is_writable: bool,
+    // The spec shows inconsistent naming - keeping both for compatibility
 }
-
 
 async fn send_token(Json(req): Json<SendTokenRequest>) -> impl IntoResponse {
     // Validate that amount is greater than 0
@@ -490,26 +480,15 @@ async fn send_token(Json(req): Json<SendTokenRequest>) -> impl IntoResponse {
 
     let instruction = instruction_result.unwrap();
 
-    // // Convert accounts to the required format (only pubkey and isSigner per spec)
-    // let accounts: Vec<SendTokenAccount> = instruction
-    //     .accounts
-    //     .iter()
-    //     .map(|meta| SendTokenAccount {
-    //         pubkey: meta.pubkey.to_string(),
-    //         is_signer: meta.is_signer,
-    //     })
-    //     .collect();
-
+    // Convert accounts to the required format (only pubkey and isSigner per spec)
     let accounts: Vec<SendTokenAccount> = instruction
-    .accounts
-    .iter()
-    .map(|meta| SendTokenAccount {
-        pubkey: meta.pubkey.to_string(),
-        is_signer: meta.is_signer,
-        is_writable: meta.is_writable,
-    })
-    .collect();
-
+        .accounts
+        .iter()
+        .map(|meta| SendTokenAccount {
+            pubkey: meta.pubkey.to_string(),
+            is_signer: meta.is_signer,
+        })
+        .collect();
 
     let response = SendTokenResponse {
         program_id: instruction.program_id.to_string(),
