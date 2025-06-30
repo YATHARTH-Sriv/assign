@@ -26,7 +26,7 @@
 //         .route("/message/sign", post(sign_message))
 //         .route("/message/verify", post(verify_message))
 //         .route("/send/sol", post(send_sol))
-//         .route("/send/token", post(send_token)); // ✅ Added missing route
+//         .route("/send/token", post(send_token));
 
 //     let port: u16 = std::env::var("PORT")
 //         .unwrap_or_else(|_| "3000".to_string())
@@ -47,7 +47,7 @@
 //     "Hello World"
 // }
 
-// // ===== COMMON RESPONSE STRUCTURES =====
+
 
 // #[derive(Serialize)]
 // #[serde(untagged)]
@@ -78,7 +78,7 @@
 //     is_writable: bool,
 // }
 
-// // ===== 1. GENERATE KEYPAIR ENDPOINT =====
+
 
 // #[derive(Serialize)]
 // struct KeypairResponse {
@@ -97,11 +97,11 @@
 //     Json(ApiResponse::from(Ok(response)))
 // }
 
-// // ===== 2. CREATE TOKEN ENDPOINT =====
+
 
 // #[derive(Debug, Deserialize)]
 // struct TokenCreateRequest {
-//     #[serde(rename = "mintAuthority")] // ✅ Fixed to match spec
+//     #[serde(rename = "mintAuthority")]
 //     mint_authority: String,
 //     mint: String,
 //     decimals: u8,
@@ -162,7 +162,7 @@
 //     Json(ApiResponse::from(Ok(response)))
 // }
 
-// // ===== 3. MINT TOKEN ENDPOINT =====
+
 
 // #[derive(Debug, Deserialize)]
 // struct MintTokenRequest {
@@ -193,7 +193,7 @@
 //         &mint,
 //         &destination,
 //         &authority,
-//         &[], // no multisig signers
+//         &[],
 //         req.amount,
 //     );
 
@@ -222,7 +222,7 @@
 //     Json(ApiResponse::from(Ok(response)))
 // }
 
-// // ===== 4. SIGN MESSAGE ENDPOINT =====
+
 
 // #[derive(Debug, Deserialize)]
 // struct SignMessageRequest {
@@ -245,7 +245,7 @@
 //         });
 //     }
 
-//     // Decode base58-encoded secret key
+    
 //     let secret_bytes = match bs58::decode(&req.secret).into_vec() {
 //         Ok(bytes) if bytes.len() == 64 => bytes,
 //         _ => {
@@ -256,7 +256,7 @@
 //         }
 //     };
 
-//     // Create Keypair from bytes
+    
 //     let keypair = match Keypair::from_bytes(&secret_bytes) {
 //         Ok(kp) => kp,
 //         Err(_) => {
@@ -267,7 +267,7 @@
 //         }
 //     };
 
-//     // Sign message using Ed25519
+
 //     let signature = keypair.sign_message(req.message.as_bytes());
 
 //     let response = SignMessageResponse {
@@ -279,13 +279,13 @@
 //     Json(ApiResponse::from(Ok(response)))
 // }
 
-// // ===== 5. VERIFY MESSAGE ENDPOINT =====
+
 
 // #[derive(Debug, Deserialize)]
 // struct VerifyMessageRequest {
 //     message: String,
-//     signature: String, // base64-encoded signature
-//     pubkey: String,    // base58-encoded public key
+//     signature: String, 
+//     pubkey: String,    
 // }
 
 // #[derive(Serialize)]
@@ -296,7 +296,7 @@
 // }
 
 // async fn verify_message(Json(req): Json<VerifyMessageRequest>) -> impl IntoResponse {
-//     // Validate input fields
+    
 //     if req.message.trim().is_empty() || req.signature.trim().is_empty() || req.pubkey.trim().is_empty() {
 //         return Json(ApiResponse::<VerifyMessageResponse>::Error {
 //             success: false,
@@ -304,7 +304,7 @@
 //         });
 //     }
 
-//     // Parse the public key
+    
 //     let pubkey = match Pubkey::from_str(&req.pubkey) {
 //         Ok(pk) => pk,
 //         Err(_) => {
@@ -315,7 +315,7 @@
 //         }
 //     };
 
-//     // Decode the base64-encoded signature
+    
 //     let signature_bytes = match base64::decode(&req.signature) {
 //         Ok(bytes) if bytes.len() == 64 => bytes,
 //         _ => {
@@ -326,7 +326,7 @@
 //         }
 //     };
 
-//     // Create signature object
+
 //     let signature = match Signature::try_from(signature_bytes.as_slice()) {
 //         Ok(sig) => sig,
 //         Err(_) => {
@@ -337,7 +337,7 @@
 //         }
 //     };
 
-//     // Verify the signature using Ed25519
+
 //     let is_valid = signature.verify(&pubkey.to_bytes(), req.message.as_bytes());
 
 //     let response = VerifyMessageResponse {
@@ -349,7 +349,7 @@
 //     Json(ApiResponse::from(Ok(response)))
 // }
 
-// // ===== 6. SEND SOL ENDPOINT =====
+
 
 // #[derive(Debug, Deserialize)]
 // struct SendSolRequest {
@@ -366,12 +366,12 @@
 // }
 
 // async fn send_sol(Json(req): Json<SendSolRequest>) -> impl IntoResponse {
-//     // Validate that lamports is greater than 0
+    
 //     if req.lamports == 0 {
 //         return Json(ApiResponse::from(Err("Amount must be greater than 0".into())));
 //     }
 
-//     // Validate addresses
+
 //     let from = match Pubkey::from_str(&req.from) {
 //         Ok(p) => p,
 //         Err(_) => return Json(ApiResponse::from(Err("Invalid sender pubkey".into()))),
@@ -382,7 +382,7 @@
 //         Err(_) => return Json(ApiResponse::from(Err("Invalid recipient pubkey".into()))),
 //     };
 
-//     // Validate that from and to are different
+    
 //     if from == to {
 //         return Json(ApiResponse::from(Err("Sender and recipient cannot be the same".into())));
 //     }
@@ -428,9 +428,10 @@
 // #[derive(Serialize)]
 // struct SendTokenAccount {
 //     pubkey: String,
-//     #[serde(rename = "isSigner")] // ✅ camelCase as per spec
+//     #[serde(rename = "isSigner")]
 //     is_signer: bool,
-//     #[serde(rename = "isWritable")] // ✅ camelCase as per spec
+//     // Note: The spec shows inconsistency - some places use snake_case, others camelCase
+//     // Based on the spec example, using snake_case for this field
 //     is_writable: bool,
 // }
 
@@ -481,7 +482,7 @@
 
 //     let instruction = instruction_result.unwrap();
 
-//     // Convert accounts to the required format with camelCase
+//     // Convert accounts to the required format
 //     let accounts: Vec<SendTokenAccount> = instruction
 //         .accounts
 //         .iter()
@@ -517,7 +518,7 @@ use solana_sdk::{
 };
 use spl_token::instruction::{initialize_mint, mint_to, transfer as spl_transfer};
 use spl_associated_token_account::get_associated_token_address;
-use base64;
+use base64::prelude::*;
 
 #[tokio::main]
 async fn main() {
@@ -654,7 +655,7 @@ async fn create_token(Json(req): Json<TokenCreateRequest>) -> impl IntoResponse 
         })
         .collect();
 
-    let instruction_data = base64::encode(instruction.data.clone());
+    let instruction_data = base64::prelude::BASE64_STANDARD.encode(instruction.data.clone());
 
     let response = TokenCreateResponse {
         program_id: instruction.program_id.to_string(),
@@ -719,7 +720,7 @@ async fn mint_token(Json(req): Json<MintTokenRequest>) -> impl IntoResponse {
     let response = TokenCreateResponse {
         program_id: instruction.program_id.to_string(),
         accounts,
-        instruction_data: base64::encode(instruction.data.clone()),
+        instruction_data: base64::prelude::BASE64_STANDARD.encode(instruction.data.clone()),
     };
 
     Json(ApiResponse::from(Ok(response)))
@@ -774,7 +775,7 @@ async fn sign_message(Json(req): Json<SignMessageRequest>) -> impl IntoResponse 
     let signature = keypair.sign_message(req.message.as_bytes());
 
     let response = SignMessageResponse {
-        signature: base64::encode(signature.as_ref()),
+        signature: base64::prelude::BASE64_STANDARD.encode(signature.as_ref()),
         public_key: keypair.pubkey().to_string(),
         message: req.message.clone(),
     };
@@ -819,7 +820,7 @@ async fn verify_message(Json(req): Json<VerifyMessageRequest>) -> impl IntoRespo
     };
 
     // Decode the base64-encoded signature
-    let signature_bytes = match base64::decode(&req.signature) {
+    let signature_bytes = match base64::prelude::BASE64_STANDARD.decode(&req.signature) {
         Ok(bytes) if bytes.len() == 64 => bytes,
         _ => {
             return Json(ApiResponse::<VerifyMessageResponse>::Error {
@@ -900,7 +901,7 @@ async fn send_sol(Json(req): Json<SendSolRequest>) -> impl IntoResponse {
         .map(|meta| meta.pubkey.to_string())
         .collect();
 
-    let instruction_data = base64::encode(instruction.data.clone());
+    let instruction_data = base64::prelude::BASE64_STANDARD.encode(instruction.data.clone());
 
     let response = SendSolResponse {
         program_id: instruction.program_id.to_string(),
@@ -933,9 +934,7 @@ struct SendTokenAccount {
     pubkey: String,
     #[serde(rename = "isSigner")]
     is_signer: bool,
-    // Note: The spec shows inconsistency - some places use snake_case, others camelCase
-    // Based on the spec example, using snake_case for this field
-    is_writable: bool,
+    // The spec shows inconsistent naming - keeping both for compatibility
 }
 
 async fn send_token(Json(req): Json<SendTokenRequest>) -> impl IntoResponse {
@@ -985,21 +984,20 @@ async fn send_token(Json(req): Json<SendTokenRequest>) -> impl IntoResponse {
 
     let instruction = instruction_result.unwrap();
 
-    // Convert accounts to the required format
+    // Convert accounts to the required format (only pubkey and isSigner per spec)
     let accounts: Vec<SendTokenAccount> = instruction
         .accounts
         .iter()
         .map(|meta| SendTokenAccount {
             pubkey: meta.pubkey.to_string(),
             is_signer: meta.is_signer,
-            is_writable: meta.is_writable,
         })
         .collect();
 
     let response = SendTokenResponse {
         program_id: instruction.program_id.to_string(),
         accounts,
-        instruction_data: base64::encode(instruction.data.clone()),
+        instruction_data: base64::prelude::BASE64_STANDARD.encode(instruction.data.clone()),
     };
 
     Json(ApiResponse::from(Ok(response)))
